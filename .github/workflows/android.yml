@@ -1,0 +1,71 @@
+name: Android TV build
+
+on:
+  push:
+    branches: ['claude/**', 'main']
+    paths: ['app/**', 'android/**', 'scripts/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Source checks
+        run: npm ci && npm run check
+
+      - name: Export the public-font web UI
+        run: npm run export:public
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          CLEANFRAME_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/sideload.p12"
+            export CLEANFRAME_KEYSTORE="$RUNNER_TEMP/sideload.p12"
+          else
+            echo "::warning::ANDROID_KEYSTORE_B64 is not set; using a throwaway debug key. Updates will need an uninstall first."
+          fi
+          gradle -p android --no-daemon assembleRelease
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk CleanFrame-Philips.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CleanFrame-Philips
+          path: CleanFrame-Philips.apk
+
+      # A fixed download link for the TV's Downloader app.
+      - name: Publish to the android-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: CleanFrame for Philips Android TV (latest build)
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: |
+            Built from ${{ github.sha }} on ${{ github.ref_name }}.
+            Install steps: android/README.md
+          files: CleanFrame-Philips.apk

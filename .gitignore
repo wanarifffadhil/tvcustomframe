@@ -43,3 +43,10 @@ PP*.woff2
 /explorations/
 /docs/research/
 /docs/articles/
+
+# Android TV port build output and signing material.
+/android/keystore/
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties

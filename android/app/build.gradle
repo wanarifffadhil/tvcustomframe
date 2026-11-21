@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+}
+
+def webOut = layout.buildDirectory.dir('web').get().asFile
+def publicWidget = rootProject.file('../dist/CleanFrame-public-unsigned.wgt')
+
+// The web UI is the public-font CleanFrame export with the Android device layer swapped in.
+def prepareWeb = tasks.register('prepareWeb', Sync) {
+    doFirst {
+        if (!publicWidget.exists()) throw new GradleException('Run `npm run export:public` in the repository root first.')
+    }
+    from(zipTree(publicWidget)) {
+        exclude 'device.js', 'config.xml', 'author-signature.xml', 'signature*.xml'
+        into 'home'
+    }
+    from(rootProject.file('web/device.js')) { into 'home' }
+    into webOut
+}
+
+android {
+    namespace 'app.cleanframe.tv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'app.cleanframe.tv'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '0.7.0-android.1'
+    }
+
+    // Release signing comes from CI secrets (see android/README.md). Without them the
+    // build falls back to the debug key, which changes between CI runs.
+    def ks = System.getenv('CLEANFRAME_KEYSTORE')
+    signingConfigs {
+        if (ks) {
+            sideload {
+                storeFile file(ks)
+                storePassword System.getenv('CLEANFRAME_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('CLEANFRAME_KEY_ALIAS') ?: 'sideload'
+                keyPassword System.getenv('CLEANFRAME_KEYSTORE_PASSWORD')
+                storeType 'PKCS12'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig ks ? signingConfigs.sideload : signingConfigs.debug
+        }
+    }
+
+    sourceSets {
+        main.assets.srcDir(webOut)
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.named('preBuild') { dependsOn prepareWeb }

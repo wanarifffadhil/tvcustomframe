@@ -1,5 +1,8 @@
 # CleanFrame
 
+> **This fork adds a Philips / Android TV version.** See [android/README.md](android/README.md) for the
+> APK download and install steps. Everything below is the original Samsung CleanFrame README.
+
 A quieter home screen for Samsung The Frame. Your apps, a photograph and the time, with an interface made for the TV remote.
 
 ![CleanFrame browser preview using the bundled Manrope font](docs/images/cleanframe-dock.jpg)
