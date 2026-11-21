@@ -1016,22 +1016,21 @@
   var sheetEl = $('sheet'), sheetView = $('sheetView');
   var IMG = { photo: $('photo'), mat: $('matImg'), bg: $('sheetBg'), field: $('phFieldImg'), fieldAlt: $('phFieldImgAlt'), utility: $('utFieldImg'), utilityAlt: $('utFieldImgAlt') };
   /* A slow pan of the photo. Every copy of the photo (backdrop, dock glass, list fields) runs the
-     same animation pinned to the document timeline, so the glass stays aligned with the photo. */
-  function startDrift() {
-    /* drift: 'always' ignores reduced motion; some TV WebViews report it although the TV's
-       animations are on (Philips 2020/2021: animator scale 0.6, no accessibility setting). */
-    var on = DRIFT && (PLATFORM.drift === 'always' || !REDUCED_MOTION);
-    if (window.console) window.console.info('CleanFrame drift: ' + (on ? 'on' : 'off') + ' (reduced motion ' + REDUCED_MOTION + ', animate ' + !!(IMG.photo && IMG.photo.animate) + ')');
-    if (!on) return;
-    stage.classList.add('drift');
-    [IMG.photo, IMG.mat, IMG.field, IMG.fieldAlt, IMG.utility, IMG.utilityAlt].forEach(function (el) {
-      if (!el || !el.animate) return;
-      var anim = el.animate([
-        { translate: '0px 0px' }, { translate: '-40px 18px' }, { translate: '-18px -22px' }, { translate: '36px 12px' }, { translate: '0px 0px' }
-      ], { duration: 120000, iterations: Infinity, easing: 'ease-in-out' });
-      anim.startTime = 0;
-    });
+     same animation pinned to the document timeline, so the glass stays aligned with the photo.
+     Wallpaper changes swap in new <img> elements (swapImg), which get the drift as they arrive.
+     drift: 'always' ignores reduced motion; some TV WebViews report it although the TV's
+     animations are on (Philips 2020/2021: animator scale 0.6, no accessibility setting). */
+  var DRIFT_ON = DRIFT && (PLATFORM.drift === 'always' || !REDUCED_MOTION), DRIFT_KEYS = ['photo', 'mat', 'field', 'fieldAlt', 'utility', 'utilityAlt'];
+  function driftImg(el) {
+    if (!DRIFT_ON || !el || el._drift) return;
+    el.classList.add('drift');
+    if (!el.animate) return;
+    el._drift = el.animate([
+      { translate: '0px 0px' }, { translate: '-64px 28px' }, { translate: '-30px -36px' }, { translate: '56px 18px' }, { translate: '0px 0px' }
+    ], { duration: 80000, iterations: Infinity, easing: 'ease-in-out' });
+    el._drift.startTime = 0;
   }
+  function startDrift() { DRIFT_KEYS.forEach(function (k) { driftImg(IMG[k]); }); }
   var sheetKey = '', slotEls = {}, dockEdgeFrame = 0, dockEdgeUntil = 0, dockAnchorCenter = 960;
   var appliedPalette = null, appliedPhoto = null, appliedFont = null, appliedFontMetrics = null;
 
@@ -1679,7 +1678,7 @@
     if (im.complete) { if (im.naturalWidth) ready(); else finish(false); }
     else { im.onload = ready; im.onerror = function () { finish(false); }; }
   }
-  function swapImg(k, im) { var old = IMG[k]; if (old === im) return; im.style.cssText = old.style.cssText; if (old.id) im.id = old.id; old.parentNode.replaceChild(im, old); IMG[k] = im; }
+  function swapImg(k, im) { var old = IMG[k]; if (old === im) return; im.style.cssText = old.style.cssText; if (old.id) im.id = old.id; old.parentNode.replaceChild(im, old); IMG[k] = im; if (DRIFT_KEYS.indexOf(k) >= 0) driftImg(im); }
   function bundleKey(look) { return look.wall + '|' + look.material; }
   function loadBundle(look, token, done) {
     var imgs = { photo: makeImg('photo', WP + look.wall + '.jpg'), bg: makeImg('sheet-bg', WP + look.wall + '-panel.jpg') }, keys, left, allOk = true;
