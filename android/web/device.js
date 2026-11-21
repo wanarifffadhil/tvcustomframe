@@ -29,7 +29,7 @@
     art: false,
     nativeLogos: true,
     dockBottom: 968,
-    drift: true,
+    drift: 'always',
     primaryApps: [
       { id: 'netflix', name: 'Netflix', mark: true, appId: PACKAGES.netflix[0], icon: logo(PACKAGES.netflix) },
       { id: 'youtube', name: 'YouTube', mark: true, appId: PACKAGES.youtube[0], icon: logo(PACKAGES.youtube) },

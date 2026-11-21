@@ -1018,7 +1018,11 @@
   /* A slow pan of the photo. Every copy of the photo (backdrop, dock glass, list fields) runs the
      same animation pinned to the document timeline, so the glass stays aligned with the photo. */
   function startDrift() {
-    if (!DRIFT || REDUCED_MOTION) return;
+    /* drift: 'always' ignores reduced motion; some TV WebViews report it although the TV's
+       animations are on (Philips 2020/2021: animator scale 0.6, no accessibility setting). */
+    var on = DRIFT && (PLATFORM.drift === 'always' || !REDUCED_MOTION);
+    if (window.console) window.console.info('CleanFrame drift: ' + (on ? 'on' : 'off') + ' (reduced motion ' + REDUCED_MOTION + ', animate ' + !!(IMG.photo && IMG.photo.animate) + ')');
+    if (!on) return;
     stage.classList.add('drift');
     [IMG.photo, IMG.mat, IMG.field, IMG.fieldAlt, IMG.utility, IMG.utilityAlt].forEach(function (el) {
       if (!el || !el.animate) return;
