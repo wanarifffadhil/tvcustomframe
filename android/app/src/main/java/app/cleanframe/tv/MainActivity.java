@@ -72,8 +72,11 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
         s.setMediaPlaybackRequiresUserGesture(true);
-        s.setUseWideViewPort(true);
-        s.setLoadWithOverviewMode(true);
+        // Lay out at the WebView's own width in CSS px (960x540 on a 1080p TV at density 320) and
+        // let main.js fit() scale the 1920x1080 stage. Wide-viewport + overview mode zoomed the
+        // page during load, so fit() measured 1920 px and the stage ended up 2x on the TV.
+        s.setUseWideViewPort(false);
+        s.setLoadWithOverviewMode(false);
         s.setTextZoom(100);
 
         web.addJavascriptInterface(new Bridge(), "CleanFrameAndroid");

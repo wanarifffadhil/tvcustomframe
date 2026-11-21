@@ -1815,10 +1815,13 @@
     after();
   }
   function fit() {
-    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    // Measure the layout viewport, not window.inner*: Android WebView can report a zoomed-out
+    // visual viewport during load, which left the stage at 2x on 1080p TVs (density 320).
+    var root = document.documentElement, w = root.clientWidth || window.innerWidth, h = root.clientHeight || window.innerHeight;
+    var scale = Math.min(w / 1920, h / 1080);
     stage.style.transform = 'scale(' + scale + ')';
-    stage.style.left = ((window.innerWidth - 1920 * scale) / 2) + 'px';
-    stage.style.top = ((window.innerHeight - 1080 * scale) / 2) + 'px';
+    stage.style.left = ((w - 1920 * scale) / 2) + 'px';
+    stage.style.top = ((h - 1080 * scale) / 2) + 'px';
   }
   function renderedAction(el) {
     return el.getClientRects().length > 0 && window.getComputedStyle(el).visibility !== 'hidden';
@@ -1885,6 +1888,8 @@
     }
   });
   window.addEventListener('resize', fit);
+  window.addEventListener('load', fit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 
   /* Readable browser checks use the real state and actions, without fake outcomes. */
   var NAV = { left: 'left', right: 'right', up: 'up', down: 'down', ok: 'ok', enter: 'ok', back: 'back', escape: 'back' };
