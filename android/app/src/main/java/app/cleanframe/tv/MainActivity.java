@@ -72,8 +72,11 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
         s.setMediaPlaybackRequiresUserGesture(true);
-        s.setUseWideViewPort(true);
-        s.setLoadWithOverviewMode(true);
+        // Lay out at the WebView's own width in CSS px (960x540 on a 1080p TV at density 320) and
+        // let main.js fit() scale the 1920x1080 stage. Wide-viewport + overview mode zoomed the
+        // page during load, so fit() measured 1920 px and the stage ended up 2x on the TV.
+        s.setUseWideViewPort(false);
+        s.setLoadWithOverviewMode(false);
         s.setTextZoom(100);
 
         web.addJavascriptInterface(new Bridge(), "CleanFrameAndroid");
@@ -181,16 +184,33 @@ public class MainActivity extends Activity {
         return "application/octet-stream";
     }
 
-    private byte[] iconBytes(Drawable d) {
-        int size = 128;
-        Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+    private byte[] iconBytes(Drawable d, int width, int height) {
+        Bitmap b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
-        d.setBounds(0, 0, size, size);
+        d.setBounds(0, 0, width, height);
         d.draw(c);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         b.compress(Bitmap.CompressFormat.PNG, 100, out);
         b.recycle();
         return out.toByteArray();
+    }
+
+    /**
+     * The app's full-colour logo: its Android TV banner (the 16:9 logo the system launcher shows)
+     * or, when it has none, its launcher icon. Cached and served at /icons/&lt;package&gt;.png.
+     */
+    private String logo(ActivityInfo a) {
+        String key = a.packageName + ".png";
+        try {
+            if (!icons.containsKey(key)) {
+                PackageManager pm = getPackageManager();
+                Drawable banner = a.loadBanner(pm);
+                icons.put(key, banner != null ? iconBytes(banner, 320, 180) : iconBytes(a.loadIcon(pm), 128, 128));
+            }
+            return "/icons/" + key;
+        } catch (Exception e) {
+            return ""; // The UI falls back to its own mark or initials.
+        }
     }
 
     /** Methods called from android/web/device.js. Each returns "" on success or an error message. */
@@ -208,17 +228,23 @@ public class MainActivity extends Activity {
                     JSONObject o = new JSONObject();
                     o.put("id", a.packageName);
                     o.put("name", String.valueOf(r.loadLabel(pm)));
-                    try {
-                        String key = a.packageName + ".png";
-                        if (!icons.containsKey(key)) icons.put(key, iconBytes(r.loadIcon(pm)));
-                        o.put("icon", "/icons/" + key);
-                    } catch (Exception ignored) { /* The UI falls back to initials. */ }
+                    String icon = logo(a);
+                    if (!icon.isEmpty()) o.put("icon", icon);
                     list.put(o);
                 }
             } catch (Exception e) {
                 return "null";
             }
             return list.toString();
+        }
+
+        /** The logo URL for one installed app, or "" when it is not installed. */
+        @JavascriptInterface
+        public String appLogo(String pkg) {
+            Intent i = launchIntent(pkg);
+            if (i == null) return "";
+            ActivityInfo a = i.resolveActivityInfo(getPackageManager(), 0);
+            return a == null ? "" : logo(a);
         }
 
         @JavascriptInterface

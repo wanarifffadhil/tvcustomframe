@@ -633,3 +633,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .quiet-utils.is-text .u-content>*+*{margin-left:0;margin-right:0}
 .quiet-utils.is-text .u-content>*+*{margin-left:0}
 .l-list .quiet-utils.is-text .u .u-content>*+*{margin-right:0}
+
+/* Platform option: full-colour app logos (Android TV banners or icons) instead of monochrome marks. */
+.mark.logo img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;border-radius:12px}
+.tile .mark.logo,.gt .mark.logo,.sc .mark.logo,.ph-group .mark.logo{opacity:1}
+/* Platform option: drifting photo. Every photo copy is 8% larger so the pan (at most 64px x 36px)
+   never shows an edge. */
+.photo.drift,.mat-img.drift,.ph-field-img.drift{margin-left:-77px;margin-top:-43px;width:2074px;height:1166px}

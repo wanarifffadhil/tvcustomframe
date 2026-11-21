@@ -12,5 +12,6 @@
   "apps": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
   "settings": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
   "home": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
-  "ps5": "CleanFrame Philips port original generic game-controller silhouette (no console branding)"
+  "ps5": "CleanFrame Philips port original generic game-controller silhouette (no console branding)",
+  "ps5-logo": "https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/playstation.svg (white symbol on a PlayStation-blue 16:9 banner; full-colour tile logo for the Android TV port)"
 }

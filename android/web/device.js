@@ -8,20 +8,35 @@
     youtube: ['com.google.android.youtube.tv', 'com.google.android.youtube.tvunplugged']
   };
   var INPUT = 'input.hdmi.';
+  var PS5_LOGO = '/home/assets/icons/ps5-logo.svg';
   /* Tizen IDs saved by the upstream catalogue are translated, so older preferences still launch. */
   var LEGACY = { 'org.tizen.netflix-app': 'netflix', '9Ur5IzDKqV.TizenYouTube': 'youtube' };
+
+  function bridge() { return window.CleanFrameAndroid; }
+  /* The app's own Android TV banner (or its launcher icon), served by the Java bridge. */
+  function logo(packages) {
+    var b = bridge(), i, url;
+    if (!b || !b.appLogo) return '';
+    for (i = 0; i < packages.length; i++) {
+      try { url = b.appLogo(packages[i]); } catch (err) { url = ''; }
+      if (url) return url;
+    }
+    return '';
+  }
 
   window.CleanFramePlatform = {
     name: 'Philips',
     art: false,
+    nativeLogos: true,
+    dockBottom: 968,
+    drift: 'always',
     primaryApps: [
-      { id: 'netflix', name: 'Netflix', mark: true, appId: PACKAGES.netflix[0] },
-      { id: 'youtube', name: 'YouTube', mark: true, appId: PACKAGES.youtube[0] },
-      { id: 'ps5', name: 'PS5', mark: true, appId: INPUT + PS5_PORT }
+      { id: 'netflix', name: 'Netflix', mark: true, appId: PACKAGES.netflix[0], icon: logo(PACKAGES.netflix) },
+      { id: 'youtube', name: 'YouTube', mark: true, appId: PACKAGES.youtube[0], icon: logo(PACKAGES.youtube) },
+      { id: 'ps5', name: 'PS5', mark: true, appId: INPUT + PS5_PORT, icon: PS5_LOGO }
     ]
   };
 
-  function bridge() { return window.CleanFrameAndroid; }
   function unavailable(done) {
     done({ message: 'Open CleanFrame on the TV to use this control.', detail: 'The web preview cannot control the TV.' });
   }
@@ -100,7 +115,7 @@
         if (brand && result.some(function (r) { return r.brand === brand; })) return;
         result.push({ appId: a.id, name: a.name, brand: brand, icon: a.icon || '', rank: brand ? 0 : 30 });
       });
-      result.push({ appId: INPUT + PS5_PORT, name: 'PS5', brand: 'ps5', icon: '', rank: 1 });
+      result.push({ appId: INPUT + PS5_PORT, name: 'PS5', brand: 'ps5', icon: PS5_LOGO, rank: 1 });
       result.sort(function (a, b) { return a.rank - b.rank || a.name.toLowerCase().localeCompare(b.name.toLowerCase()); });
       done(null, result);
     }, 0);
